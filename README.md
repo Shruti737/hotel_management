@@ -23,7 +23,7 @@ The API provides hotel creation, autocomplete search, hotel details, image URL h
 | NestJS | Backend framework |
 | TypeScript | Programming language |
 | PostgreSQL | Database |
-| Sequelize | ORM |
+| Sequelize | ORM | 
 | class-validator | Request validation |
 | Render | Deployment |
 | Postman | API documentation |
