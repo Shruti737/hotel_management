@@ -10,9 +10,9 @@ The API provides hotel creation, autocomplete search, hotel details, image URL h
 
 > **The project is LIVE and can be used here:**
 
-**[Live API – Render](YOUR_RENDER_URL)**
+**[Live API – Render](https://hotel-management-5o53.onrender.com)**
 
-> Replace `YOUR_RENDER_URL` with the actual Render deployment URL.
+> Replace `https://hotel-management-5o53.onrender.com` with the actual Render deployment URL.
 
 ---
 
