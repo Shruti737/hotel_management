@@ -1,0 +1,1125 @@
+{
+  "info": {
+    "_postman_id": "b1f0b6f2-6d2f-4f6e-9c8f-2f8f3d9b6a10",
+    "name": "GlobInn Hotel Module",
+    "description": "REST API documentation for the GlobInn Hotel module (NestJS + PostgreSQL + Sequelize).\n\n### Endpoints\n| Method | Path | Description |\n|---|---|---|\n| POST | `{{baseUrl}}/hotels` | Create a hotel with optional images |\n| GET | `{{baseUrl}}/hotels/autocomplete?q=` | Prefix autocomplete over active hotels (max 10, no images) |\n| GET | `{{baseUrl}}/hotels/:id` | Hotel details including images ordered by sortOrder |\n\n### Setup\n1. `npm install`\n2. create the database (`createdb globinn_hotels`)\n3. `npm run migration:run`\n4. `npm run seed`\n5. `npm run start:dev`\n\n### Error format\nAll errors use the standard NestJS body, for example:\n```json\n{ \"statusCode\": 400, \"message\": [\"name should not be empty\"], \"error\": \"Bad Request\" }\n```\nSQL queries, database credentials and stack traces are never exposed.\n\n### Status codes\n| Status | When |\n|---|---|\n| 200 | Successful autocomplete / hotel details |\n| 201 | Hotel created |\n| 400 | Request validation failed, query shorter than 2 characters, more than one primary image, non numeric id |\n| 404 | Hotel not found |\n| 409 | Duplicate image url for the same hotel |\n| 500 | Unexpected error |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL of the running API (a Render URL can be used instead)"
+    },
+    {
+      "key": "hotelId",
+      "value": "1",
+      "type": "string",
+      "description": "Hotel id used by the details request; set this manually"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Hotel",
+      "description": "Creates a hotel and, optionally, its images inside a single transaction. The hotel is always created as active.",
+      "item": [
+        {
+          "name": "Create hotel with multiple images",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "**POST /hotels**\n\nCreates a hotel and its images inside one database transaction.\n\n**Body parameters**\n| Field | Type | Required | Rules |\n|---|---|---|---|\n| name | string | yes | 1-255 characters |\n| description | string | no | max 2000 characters |\n| address | string | yes | 1-255 characters |\n| city | string | yes | 1-120 characters |\n| countryCode | string | yes | valid ISO 3166-1 alpha-2 code (stored uppercase) |\n| latitude | number | yes | -90 to 90 |\n| longitude | number | yes | -180 to 180 |\n| starRating | integer | yes | 1 to 5 |\n| images | array | no | see below |\n| images[].url | string | yes | valid HTTP/HTTPS url, unique per hotel |\n| images[].isPrimary | boolean | no | at most one primary image |\n| images[].sortOrder | integer | no | >= 0, defaults to the array position |\n\n**Business rules**\n- the hotel is created with `isActive: true`\n- when no image is marked primary, the first image becomes primary\n- more than one primary image returns 400\n- duplicate image urls for the same hotel return 409\n- properties outside the contract return 400\n\n**Responses:** 201 Created, 400 Bad Request, 409 Conflict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"The Grand Hotel\",\n  \"description\": \"Luxury hotel in Delhi\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/hotel-1.jpg\",\n      \"isPrimary\": true\n    },\n    {\n      \"url\": \"https://example.com/hotel-2.jpg\",\n      \"isPrimary\": false\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"The Grand Hotel\",\n  \"description\": \"Luxury hotel in Delhi\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/hotel-1.jpg\",\n      \"isPrimary\": true\n    },\n    {\n      \"url\": \"https://example.com/hotel-2.jpg\",\n      \"isPrimary\": false\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 42,\n  \"name\": \"The Grand Hotel\",\n  \"description\": \"Luxury hotel in Delhi\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"isActive\": true,\n  \"images\": [\n    {\n      \"id\": 100,\n      \"url\": \"https://example.com/hotel-1.jpg\",\n      \"isPrimary\": true,\n      \"sortOrder\": 0\n    },\n    {\n      \"id\": 101,\n      \"url\": \"https://example.com/hotel-2.jpg\",\n      \"isPrimary\": false,\n      \"sortOrder\": 1\n    }\n  ]\n}"
+            },
+            {
+              "name": "400 Bad Request - more than one primary image",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"The Grand Hotel\",\n  \"description\": \"Luxury hotel in Delhi\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/hotel-1.jpg\",\n      \"isPrimary\": true\n    },\n    {\n      \"url\": \"https://example.com/hotel-2.jpg\",\n      \"isPrimary\": false\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Only one image can be marked as primary\",\n  \"error\": \"Bad Request\"\n}"
+            },
+            {
+              "name": "409 Conflict - duplicate image url",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"The Grand Hotel\",\n  \"description\": \"Luxury hotel in Delhi\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/hotel-1.jpg\",\n      \"isPrimary\": true\n    },\n    {\n      \"url\": \"https://example.com/hotel-2.jpg\",\n      \"isPrimary\": false\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 409,\n  \"message\": \"Duplicate image url for this hotel: https://example.com/hotel-1.jpg\",\n  \"error\": \"Conflict\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create hotel without images",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "**POST /hotels**\n\nImages are optional. The response contains an empty `images` array and the hotel is created as active.\n\n**Responses:** 201 Created, 400 Bad Request",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emerald Inn\",\n  \"address\": \"T Nagar\",\n  \"city\": \"Chennai\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 13.05,\n  \"longitude\": 80.25,\n  \"starRating\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Emerald Inn\",\n  \"address\": \"T Nagar\",\n  \"city\": \"Chennai\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 13.05,\n  \"longitude\": 80.25,\n  \"starRating\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 43,\n  \"name\": \"Emerald Inn\",\n  \"description\": null,\n  \"address\": \"T Nagar\",\n  \"city\": \"Chennai\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 13.05,\n  \"longitude\": 80.25,\n  \"starRating\": 2,\n  \"isActive\": true,\n  \"images\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create hotel - first image becomes primary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "**POST /hotels**\n\nNo image is marked as primary, so the first image becomes the primary one (business rule).\n\n**Responses:** 201 Created",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Primary Fallback Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Pune\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"starRating\": 4,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/fallback-1.jpg\"\n    },\n    {\n      \"url\": \"https://example.com/fallback-2.jpg\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Primary Fallback Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Pune\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"starRating\": 4,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/fallback-1.jpg\"\n    },\n    {\n      \"url\": \"https://example.com/fallback-2.jpg\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 44,\n  \"name\": \"Primary Fallback Hotel\",\n  \"description\": null,\n  \"address\": \"MG Road\",\n  \"city\": \"Pune\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"starRating\": 4,\n  \"isActive\": true,\n  \"images\": [\n    {\n      \"id\": 102,\n      \"url\": \"https://example.com/fallback-1.jpg\",\n      \"isPrimary\": true,\n      \"sortOrder\": 0\n    },\n    {\n      \"id\": 103,\n      \"url\": \"https://example.com/fallback-2.jpg\",\n      \"isPrimary\": false,\n      \"sortOrder\": 1\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create hotel - validation errors (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "**POST /hotels**\n\nValidation errors returned by the global ValidationPipe.\n\n- `countryCode` must be a valid ISO 3166-1 alpha-2 code\n- `latitude` must be between -90 and 90\n- `longitude` must be between -180 and 180\n- `starRating` must be between 1 and 5\n- image `url` must be a valid HTTP/HTTPS url\n\n**Responses:** 400 Bad Request",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"XX\",\n  \"latitude\": 120,\n  \"longitude\": -200,\n  \"starRating\": 6,\n  \"images\": [\n    {\n      \"url\": \"not-a-url\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Bad Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"XX\",\n  \"latitude\": 120,\n  \"longitude\": -200,\n  \"starRating\": 6,\n  \"images\": [\n    {\n      \"url\": \"not-a-url\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"countryCode must be a valid ISO 3166-1 alpha-2 country code\",\n    \"latitude must be less than or equal to 90\",\n    \"longitude must be greater than or equal to -180\",\n    \"starRating must be at most 5\",\n    \"images.0.url must be a valid HTTP or HTTPS URL\"\n  ],\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create hotel - duplicate image urls (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "**POST /hotels**\n\nDuplicate image urls for the same hotel are rejected. The rule is enforced in the service layer and backed by the database unique constraint on `hotelId + url`. No hotel row is created.\n\n**Responses:** 409 Conflict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate URL Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/same.jpg\"\n    },\n    {\n      \"url\": \"https://example.com/same.jpg\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "409 Conflict",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Duplicate URL Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/same.jpg\"\n    },\n    {\n      \"url\": \"https://example.com/same.jpg\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 409,\n  \"message\": \"Duplicate image url for this hotel: https://example.com/same.jpg\",\n  \"error\": \"Conflict\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create hotel - two primary images (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "**POST /hotels**\n\nOnly one image may be marked as primary.\n\n**Responses:** 400 Bad Request",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Two Primary Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/a.jpg\",\n      \"isPrimary\": true\n    },\n    {\n      \"url\": \"https://example.com/b.jpg\",\n      \"isPrimary\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Two Primary Hotel\",\n  \"address\": \"MG Road\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/a.jpg\",\n      \"isPrimary\": true\n    },\n    {\n      \"url\": \"https://example.com/b.jpg\",\n      \"isPrimary\": true\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Only one image can be marked as primary\",\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create hotel - missing required fields (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "**POST /hotels**\n\n`name`, `address`, `city`, `countryCode`, `latitude`, `longitude` and `starRating` are required.\n\n**Responses:** 400 Bad Request",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"only the description was sent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"only the description was sent\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/hotels",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"name should not be empty\",\n    \"address should not be empty\",\n    \"city should not be empty\",\n    \"countryCode must be a valid ISO 3166-1 alpha-2 country code\",\n    \"latitude must be a number conforming to the specified constraints\",\n    \"longitude must be a number conforming to the specified constraints\",\n    \"starRating must be an integer\"\n  ],\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Hotel Autocomplete",
+      "description": "Prefix autocomplete over active hotels. Returns at most 10 hotels without images.",
+      "item": [
+        {
+          "name": "Autocomplete hotels by prefix (q=gra)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotels/autocomplete?q=gra",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "autocomplete"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "gra",
+                  "description": "Search prefix, at least 2 characters"
+                }
+              ]
+            },
+            "description": "**GET /hotels/autocomplete?q=**\n\nCase-insensitive prefix search over the `normalizedName` column.\n\n**Query parameters**\n| Parameter | Type | Required | Rules |\n|---|---|---|---|\n| q | string | yes | at least 2 characters, max 100 |\n\n**Rules**\n- only active hotels (`isActive = true`) are returned\n- a maximum of 10 hotels is returned, ordered by name\n- images are never returned\n\n**Responses:** 200 OK, 400 Bad Request"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/autocomplete?q=gra",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "autocomplete"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "gra",
+                      "description": "Search prefix, at least 2 characters"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Grand Hotel Delhi\",\n    \"city\": \"Delhi\"\n  },\n  {\n    \"id\": 6,\n    \"name\": \"Grand Lotus Hotel\",\n    \"city\": \"Bengaluru\"\n  },\n  {\n    \"id\": 2,\n    \"name\": \"GRAND PALACE Hotel\",\n    \"city\": \"Jaipur\"\n  }\n]"
+            },
+            {
+              "name": "400 Bad Request - q is missing",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/autocomplete?q=gra",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "autocomplete"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "gra",
+                      "description": "Search prefix, at least 2 characters"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"q must be shorter than or equal to 100 characters\",\n    \"q must be at least 2 characters long\",\n    \"q must be a string\"\n  ],\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Autocomplete - case-insensitive (q=GRAND)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotels/autocomplete?q=GRAND",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "autocomplete"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "GRAND",
+                  "description": "Upper case prefix matches lower case names"
+                }
+              ]
+            },
+            "description": "**GET /hotels/autocomplete?q=GRAND**\n\nThe query is lower-cased and matched against `normalizedName`, so `GRAND`, `Grand` and `grand` return the same hotels.\n\n**Responses:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/autocomplete?q=GRAND",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "autocomplete"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "GRAND",
+                      "description": "Upper case prefix matches lower case names"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Grand Hotel Delhi\",\n    \"city\": \"Delhi\"\n  },\n  {\n    \"id\": 6,\n    \"name\": \"Grand Lotus Hotel\",\n    \"city\": \"Bengaluru\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Autocomplete - inactive hotels are excluded (q=grand orchid)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotels/autocomplete?q=grand orchid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "autocomplete"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "grand orchid",
+                  "description": "Matches an inactive seeded hotel"
+                }
+              ]
+            },
+            "description": "**GET /hotels/autocomplete?q=grand orchid**\n\n\"Grand Orchid Hotel\" is seeded as inactive, so it is never returned.\n\n**Responses:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/autocomplete?q=grand orchid",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "autocomplete"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "grand orchid",
+                      "description": "Matches an inactive seeded hotel"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "[]"
+            }
+          ]
+        },
+        {
+          "name": "Autocomplete - query shorter than 2 characters (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotels/autocomplete?q=g",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "autocomplete"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "g",
+                  "description": "Too short"
+                }
+              ]
+            },
+            "description": "**GET /hotels/autocomplete?q=g**\n\nThe query must contain at least 2 characters, otherwise the request is rejected with 400 before the service is called.\n\n**Responses:** 400 Bad Request"
+          },
+          "response": [
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/autocomplete?q=g",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "autocomplete"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "g",
+                      "description": "Too short"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"q must be at least 2 characters long\"\n  ],\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Hotel Details",
+      "description": "Hotel details including the images of the hotel ordered by sortOrder.",
+      "item": [
+        {
+          "name": "Hotel details including images",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}"
+              ]
+            },
+            "description": "**GET /hotels/:id**\n\nReturns the hotel details together with its images ordered by `sortOrder`.\n\n**Path parameters**\n| Parameter | Type | Required | Rules |\n|---|---|---|---|\n| id | integer | yes | numeric hotel id |\n\n**Response fields**\n`id`, `name`, `description`, `address`, `city`, `countryCode`, `latitude`, `longitude`, `starRating`, `isActive`, `images`\n\nEach image contains `id`, `url`, `isPrimary` and `sortOrder`. Internal fields such as `normalizedName`, `hotelId`, `createdAt` and `updatedAt` are never exposed.\n\n**Responses:** 200 OK, 400 Bad Request, 404 Not Found"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/{{hotelId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "{{hotelId}}"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Grand Hotel Delhi\",\n  \"description\": \"Luxury hotel in the heart of Delhi\",\n  \"address\": \"MG Road, Connaught Place\",\n  \"city\": \"Delhi\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"starRating\": 5,\n  \"isActive\": true,\n  \"images\": [\n    {\n      \"id\": 1,\n      \"url\": \"https://images.unsplash.com/photo-1566073771259-6a8506099945\",\n      \"isPrimary\": false,\n      \"sortOrder\": 0\n    },\n    {\n      \"id\": 2,\n      \"url\": \"https://images.unsplash.com/photo-1551882547-ff40c63fe5fa\",\n      \"isPrimary\": true,\n      \"sortOrder\": 1\n    }\n  ]\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/{{hotelId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "{{hotelId}}"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 404,\n  \"message\": \"Hotel with id 9999 was not found\",\n  \"error\": \"Not Found\"\n}"
+            },
+            {
+              "name": "400 Bad Request - non numeric id",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/{{hotelId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "{{hotelId}}"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Validation failed (numeric string is expected)\",\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hotel details - hotel with several images (id=12)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotels/12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "12"
+              ]
+            },
+            "description": "**GET /hotels/12**\n\nSeeded hotel with three images; the response shows the images sorted by `sortOrder` (0, 1, 2) with the primary image in the middle.\n\n**Responses:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/12",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "12"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 12,\n  \"name\": \"Grand Metro Hotel\",\n  \"description\": \"Business hotel next to the metro station\",\n  \"address\": \"Park Street\",\n  \"city\": \"Kolkata\",\n  \"countryCode\": \"IN\",\n  \"latitude\": 22.5726,\n  \"longitude\": 88.3639,\n  \"starRating\": 3,\n  \"isActive\": true,\n  \"images\": [\n    {\n      \"id\": 26,\n      \"url\": \"https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea\",\n      \"isPrimary\": false,\n      \"sortOrder\": 0\n    },\n    {\n      \"id\": 27,\n      \"url\": \"https://images.unsplash.com/photo-1493809842364-78817add7ffb\",\n      \"isPrimary\": false,\n      \"sortOrder\": 1\n    },\n    {\n      \"id\": 28,\n      \"url\": \"https://images.unsplash.com/photo-1512917774080-9991f1c4c750\",\n      \"isPrimary\": true,\n      \"sortOrder\": 2\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hotel details - hotel not found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotels/9999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "9999"
+              ]
+            },
+            "description": "**GET /hotels/9999**\n\nNon existing hotel id.\n\n**Responses:** 404 Not Found"
+          },
+          "response": [
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/hotels/9999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "hotels",
+                    "9999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 404,\n  \"message\": \"Hotel with id 9999 was not found\",\n  \"error\": \"Not Found\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
